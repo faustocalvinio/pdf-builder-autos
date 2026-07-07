@@ -2,7 +2,7 @@ const PDFDocument = require('pdfkit');
 const path = require('path');
 const fs = require('fs');
 
-function generarPDFStock(stockData) {
+function generarPDFStock(stockData, outputPath) {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: 'A4',
@@ -13,7 +13,7 @@ function generarPDFStock(stockData) {
     const uploadsDir = path.join(__dirname, '..', 'uploads');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `stock-autos-${timestamp}.pdf`;
-    const filePath = path.join(uploadsDir, fileName);
+    const filePath = outputPath || path.join(uploadsDir, fileName);
 
     const stream = fs.createWriteStream(filePath);
     doc.pipe(stream);
