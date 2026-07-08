@@ -3,14 +3,26 @@ const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 const { generarPDFStock } = require('./templates/pdfTemplate');
+const { generarPDFLegal } = require('./templates/legalTemplate');
 
-function generarNombre(concesionaria) {
+const TEMPLATES = ['stock', 'legal'];
+
+function generarNombre(template, data) {
   const ts = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
   const rand = crypto.randomBytes(3).toString('hex');
-  const prefijo = concesionaria
-    ? concesionaria.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30)
-    : 'stock';
-  return `reporte-${prefijo}-${ts}-${rand}.pdf`;
+
+  let prefijo;
+  if (template === 'stock') {
+    prefijo = data.concesionaria
+      ? data.concesionaria.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30)
+      : 'stock';
+  } else {
+    prefijo = data.titulo
+      ? data.titulo.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30)
+      : 'legal';
+  }
+
+  return `${template}-${prefijo}-${ts}-${rand}.pdf`;
 }
 
 function readStdin() {
@@ -27,6 +39,7 @@ async function main() {
   const args = process.argv.slice(2);
 
   let inputPath, outputPath, outputDir, useStdin = false;
+  let template = 'stock';
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--input' || args[i] === '-i') {
@@ -35,9 +48,16 @@ async function main() {
       outputPath = args[++i];
     } else if (args[i] === '--output-dir' || args[i] === '-d') {
       outputDir = args[++i];
+    } else if (args[i] === '--template' || args[i] === '-t') {
+      template = args[++i];
     } else if (args[i] === '--stdin') {
       useStdin = true;
     }
+  }
+
+  if (!TEMPLATES.includes(template)) {
+    console.error(`Error: template no valido. Opciones: ${TEMPLATES.join(', ')}`);
+    process.exit(1);
   }
 
   if (!inputPath && !useStdin) {
@@ -64,14 +84,21 @@ async function main() {
     process.exit(1);
   }
 
-  if (!data.autos || !Array.isArray(data.autos)) {
-    console.error('Error: el JSON debe incluir un array "autos"');
-    process.exit(1);
+  if (template === 'stock') {
+    if (!data.autos || !Array.isArray(data.autos)) {
+      console.error('Error: template "stock" requiere un array "autos"');
+      process.exit(1);
+    }
+  } else if (template === 'legal') {
+    if (!data.titulo) {
+      console.error('Error: template "legal" requiere el campo "titulo"');
+      process.exit(1);
+    }
   }
 
   if (!outputPath) {
     const dir = outputDir || os.tmpdir();
-    const nombre = generarNombre(data.concesionaria);
+    const nombre = generarNombre(template, data);
     outputPath = path.join(dir, nombre);
   }
 
@@ -80,7 +107,13 @@ async function main() {
     fs.mkdirSync(outDir, { recursive: true });
   }
 
-  const pdfPath = await generarPDFStock(data, outputPath);
+  let pdfPath;
+  if (template === 'stock') {
+    pdfPath = await generarPDFStock(data, outputPath);
+  } else if (template === 'legal') {
+    pdfPath = await generarPDFLegal(data, outputPath);
+  }
+
   console.log(pdfPath);
 }
 
