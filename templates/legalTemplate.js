@@ -19,16 +19,8 @@ function generarPDFLegal(data, outputPath) {
     doc.pipe(stream);
 
     const firma = data.firma || 'DOTCOM Estudio Jurídico';
-    const titulo = data.titulo || 'Documento Legal';
-    const subtitulo = data.subtitulo || '';
-    const expediente = data.expediente || '';
-    const caratula = data.caratula || '';
-    const cliente = data.cliente || '';
-    const materia = data.materia || '';
-    const jurisdiccion = data.jurisdiccion || '';
-    const secciones = data.secciones || [];
-    const firmante = data.firmante || '';
-    const notas = data.notas || '';
+    const titulo = data.titulo || '';
+    const contenido = data.contenido || '';
     const fechaFooter = new Date().toLocaleDateString('es-AR', {
       day: '2-digit',
       month: '2-digit',
@@ -38,7 +30,6 @@ function generarPDFLegal(data, outputPath) {
     const azulOscuro = '#1a237e';
     const azulMedio = '#3949ab';
     const gris = '#616161';
-    const grisClaro = '#f5f5f5';
 
     function piePagina(pageCount) {
       for (let i = 0; i < pageCount; i++) {
@@ -63,7 +54,7 @@ function generarPDFLegal(data, outputPath) {
     }
 
     // ========================
-    // ENCABEZADO - LETTERHEAD
+    // ENCABEZADO
     // ========================
 
     doc
@@ -93,146 +84,37 @@ function generarPDFLegal(data, outputPath) {
       .moveDown(0.6);
 
     // ========================
-    // TITULO DEL DOCUMENTO
+    // TITULO
     // ========================
 
-    doc
-      .fontSize(14)
-      .font('Helvetica-Bold')
-      .fillColor(azulOscuro)
-      .text(titulo.toUpperCase(), { width: 495, align: 'center' })
-      .moveDown(0.2);
-
-    if (subtitulo) {
+    if (titulo) {
       doc
-        .fontSize(11)
-        .font('Helvetica')
-        .fillColor(gris)
-        .text(subtitulo, { width: 495, align: 'center' })
-        .moveDown(0.6);
-    }
-
-    doc.moveDown(0.4);
-
-    // ========================
-    // DATOS DEL EXPEDIENTE
-    // ========================
-
-    const tieneMetadata = expediente || caratula || cliente || materia || jurisdiccion;
-
-    if (tieneMetadata) {
-      const boxTop = doc.y;
-
-      doc.rect(50, boxTop, 495, 4).fill(azulMedio);
-
-      const labels = [];
-      if (expediente) labels.push({ lbl: 'Expediente', val: expediente });
-      if (caratula) labels.push({ lbl: 'Carátula', val: caratula });
-      if (cliente) labels.push({ lbl: 'Cliente', val: cliente });
-      if (materia) labels.push({ lbl: 'Materia', val: materia });
-      if (jurisdiccion) labels.push({ lbl: 'Jurisdicción', val: jurisdiccion });
-
-      let metaY = boxTop + 10;
-
-      labels.forEach((item) => {
-        doc
-          .fontSize(9)
-          .font('Helvetica-Bold')
-          .fillColor(azulOscuro)
-          .text(`${item.lbl}: `, 58, metaY, { continued: true, width: 100 })
-          .font('Helvetica')
-          .fillColor('#333')
-          .text(item.val, { width: 380 })
-          .moveDown(0.1);
-        metaY = doc.y;
-      });
-
-      doc
-        .rect(50, boxTop, 495, metaY - boxTop + 4)
-        .strokeColor(azulMedio)
-        .lineWidth(0.5)
-        .stroke();
-
-      doc.moveDown(0.6);
-    }
-
-    // ========================
-    // SECCIONES DE CONTENIDO
-    // ========================
-
-    secciones.forEach((seccion, idx) => {
-      if (doc.y > 650) doc.addPage();
-
-      doc
-        .fontSize(12)
+        .fontSize(14)
         .font('Helvetica-Bold')
         .fillColor(azulOscuro)
-        .text(seccion.titulo || `Sección ${idx + 1}`, { width: 495 })
-        .moveDown(0.3);
-
-      if (seccion.contenido) {
-        const parrafos = seccion.contenido.split('\n').filter(Boolean);
-        parrafos.forEach((p) => {
-          doc
-            .fontSize(10)
-            .font('Helvetica')
-            .fillColor('#333')
-            .text(p.trim(), {
-              width: 495,
-              align: 'justify',
-              lineGap: 2,
-            })
-            .moveDown(0.3);
-        });
-      }
-
-      doc.moveDown(0.3);
-    });
-
-    // ========================
-    // FIRMA
-    // ========================
-
-    if (firmante) {
-      if (doc.y > 600) doc.addPage();
-      doc.moveDown(1.5);
-
-      doc
-        .moveTo(350, doc.y)
-        .lineTo(545, doc.y)
-        .strokeColor(azulOscuro)
-        .lineWidth(0.5)
-        .stroke()
-        .moveDown(0.3);
-
-      doc
-        .fontSize(10)
-        .font('Helvetica')
-        .fillColor('#333')
-        .text(firmante, 350, doc.y, { width: 195, align: 'center' })
+        .text(titulo.toUpperCase(), { width: 495, align: 'center' })
         .moveDown(1);
     }
 
     // ========================
-    // NOTAS / DISCLAIMER
+    // CONTENIDO
     // ========================
 
-    if (notas) {
-      if (doc.y > 650) doc.addPage();
+    if (contenido) {
+      const parrafos = contenido.split('\n').filter((p) => p.trim() !== '');
 
-      doc
-        .moveTo(50, doc.y)
-        .lineTo(545, doc.y)
-        .strokeColor(grisClaro)
-        .lineWidth(1)
-        .stroke()
-        .moveDown(0.4);
-
-      doc
-        .fontSize(7)
-        .font('Helvetica-Oblique')
-        .fillColor(gris)
-        .text(notas, { width: 495, align: 'justify' });
+      parrafos.forEach((p) => {
+        doc
+          .fontSize(10)
+          .font('Helvetica')
+          .fillColor('#333')
+          .text(p.trim(), {
+            width: 495,
+            align: 'justify',
+            lineGap: 2,
+          })
+          .moveDown(0.3);
+      });
     }
 
     // ========================

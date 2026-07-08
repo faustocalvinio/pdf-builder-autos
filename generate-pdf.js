@@ -17,9 +17,8 @@ function generarNombre(template, data) {
       ? data.concesionaria.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30)
       : 'stock';
   } else {
-    prefijo = data.titulo
-      ? data.titulo.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30)
-      : 'legal';
+    prefijo = (data.titulo || data.firma || 'legal')
+      .replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '').toLowerCase().slice(0, 30);
   }
 
   return `${template}-${prefijo}-${ts}-${rand}.pdf`;
@@ -90,8 +89,8 @@ async function main() {
       process.exit(1);
     }
   } else if (template === 'legal') {
-    if (!data.titulo) {
-      console.error('Error: template "legal" requiere el campo "titulo"');
+    if (!data.contenido) {
+      console.error('Error: template "legal" requiere el campo "contenido"');
       process.exit(1);
     }
   }
